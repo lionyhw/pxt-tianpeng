@@ -1,7 +1,7 @@
 /**
  * The intelligent programming car produced by ELECFREAKS Co.ltd looks like a pig
  */
-//% weight=0 color=#0fbc11  icon="\uf0d1" 
+//% weight=0 color=#53caec  icon="\uf0d1" 
 namespace tianPeng {
     const tianPengAdd = 0X10
     let Buff = pins.createBuffer(4);
