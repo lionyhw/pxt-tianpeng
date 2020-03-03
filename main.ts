@@ -18,11 +18,11 @@ namespace tianPeng {
     /**
     * List of driving directions
     */
-    export enum DriveDirection{
+    export enum DriveDirection {
         //% blockId="Forward" block="Forward"
         Forward = 0,
-        //% blockId="back forward" block="back forward"
-        backforward = 1
+        //% blockId="backward" block="backward"
+        backward = 1
     }
     /**
     * Status List of Tracking Modules
@@ -48,6 +48,15 @@ namespace tianPeng {
         Centimeters,
         //% block="inches"
         Inches
+    }
+    /**
+    * Ultrasonic judgment
+    */
+    export enum Sonarjudge {
+        //% block="<"
+        less,
+        //% block=">"
+        greater
     }
     /**
     * Select the servo on the S1 or S2
@@ -80,14 +89,15 @@ namespace tianPeng {
         //% block="right" enumval=1
         RightLine = DAL.MICROBIT_ID_IO_P14
     }
+
     /**
     * TODO: Set the speed of the wheels. 
     * @param speed Left wheel speed , eg: 100
     * @param motorlist left or right wheel , eg: mo
     */
     //% weight=100
-    //% block="Set %wheel wheel speed %speed"
-    //% speed.min=-100 speed.max=100
+    //% block="Set %wheel wheel speed at %speed"
+    //% speed.min=-100 speed.max=100 
     //% wheel.fieldEditor="gridpicker"
     //% wheel.fieldOptions.columns=2
     export function setWheelSpeed(wheel: WheelList, speed: number = 50): void {
@@ -137,7 +147,7 @@ namespace tianPeng {
      * @param rspeed Right wheel speed, eg: -100
      */
     //% weight=80
-    //% block="Set left wheel speed %lspeed| right wheel speed %rspeed"
+    //% block="Set left wheel speed at %lspeed| right wheel speed at %rspeed"
     //% lspeed.min=-100 lspeed.max=100
     //% rspeed.min=-100 rspeed.max=100
     export function setWheels(lspeed: number = 50, rspeed: number = 50): void {
@@ -184,19 +194,20 @@ namespace tianPeng {
      * TODO: Setting the direction and time of travel.
      */
     //% weight=75
-    //% block="Drive %Direc for %time seconds"
-    export function setwheeltime(Direc:DriveDirection,time:number): void {
+    //% block="Go %Direc at speed %speed for %time seconds"
+    //% speed.min=0 speed.max=100
+    export function setwheeltime(Direc: DriveDirection, speed: number, time: number): void {
         if (Direc == 0) {
-            setWheels(100,100)
-            basic.pause(time*1000)
-            stopCar()
-        }
-        else{
-            setWheels(-100, -100)
+            setWheels(speed, speed)
             basic.pause(time * 1000)
             stopCar()
         }
-    }   
+        else {
+            setWheels(-speed, -speed)
+            basic.pause(time * 1000)
+            stopCar()
+        }
+    }
     /**
      * TODO: Stop the car. 
      */
@@ -210,21 +221,25 @@ namespace tianPeng {
         pins.i2cWriteBuffer(tianPengAdd, Buff);  //写入左轮
         Buff[0] = 0x01;
         pins.i2cWriteBuffer(tianPengAdd, Buff);  //写入左轮
-    }    
+    }
     /**
      * TODO: track one side
+     * @param side Line sensor edge , eg: mbPins.LeftLine
+     * @param state Line sensor status, eg: state.FindLine
      */
     //% weight=65
-    //% blockId=tianpengcar_trackside block="%side line serson %state"
+    //% blockId=tianpengcar_trackside block="%side line sensor %state"
+    //% state.fieldEditor="gridpicker" state.fieldOptions.columns=2
+    //% side.fieldEditor="gridpicker" side.fieldOptions.columns=2
     export function trackside(side: mbPins, state: mbEvents): boolean {
         pins.setPull(DigitalPin.P13, PinPullMode.PullNone)
         pins.setPull(DigitalPin.P14, PinPullMode.PullNone)
         let left_tracking = pins.digitalReadPin(DigitalPin.P13);
         let right_tracking = pins.digitalReadPin(DigitalPin.P14);
-        if (left_tracking == 0  && state == 0) {
+        if (left_tracking == 0 && state == 0) {
             return false;
         }
-        else if (left_tracking == 1  && state == 0) {
+        else if (left_tracking == 1 && state == 0) {
             return true;
         }
         if (left_tracking == 0 && state == 1) {
@@ -245,8 +260,8 @@ namespace tianPeng {
         else if (right_tracking == 1 && state == 1) {
             return false;
         }
-            return false;
-        
+        return false;
+
     }
     /**
     * Judging the Current Status of Tracking Module. 
@@ -282,6 +297,8 @@ namespace tianPeng {
     */
     //% weight=58
     //% blockId=bc_event block="On %sensor| line %event"
+    //% sensor.fieldEditor="gridpicker" sensor.fieldOptions.columns=2
+    //% event.fieldEditor="gridpicker" event.fieldOptions.columns=2
     export function trackEvent(sensor: mbPins, event: mbEvents, handler: Action) {
         initEvents();
         control.onEvent(<number>sensor, <number>event, handler);
@@ -294,7 +311,7 @@ namespace tianPeng {
     //% blockId=ultrasonic block="Sonar distance unit %unit"
     //% unit.fieldEditor="gridpicker"
     //% unit.fieldOptions.columns=2
-    export function ultrasonic(unit: SonarUnit, maxCmDistance = 500): number {
+    export function sonarReturn(unit: SonarUnit, maxCmDistance = 500): number {
         // send pulse
         pins.setPull(DigitalPin.P16, PinPullMode.PullNone);
         pins.digitalWritePin(DigitalPin.P16, 0);
@@ -315,7 +332,34 @@ namespace tianPeng {
                 return d;
         }
     }
+    /**
+    * TODO: sonar Judge.
+    * @param dis sonar distance , eg: 5
+    */
+    //% weight=49
+    //% blockId=sonarJudgeboolean block="Sonar distance %judge %dis cm"
+    //% dis.min=1 dis.max=400
+    //% judge.fieldEditor="gridpicker" judge.fieldOptions.columns=2
+    export function sonarJudge(judge: Sonarjudge, dis: number): boolean {
+        if (judge == 0) {
+            if (sonarReturn(SonarUnit.Centimeters) < dis && sonarReturn(SonarUnit.Centimeters) != 0) {
+                return true
+            }
+            else {
+                return false
+            }
+        }
+        else {
+            if (sonarReturn(SonarUnit.Centimeters) > dis) {
+                return true
+            }
+            else {
+                return false
+            }
+        }
+    }
     //% block="LED show color $color"
+    //% weight=45
     //% color.shadow="colorNumberPicker"
     export function showColor(color: number) {
 
@@ -323,9 +367,9 @@ namespace tianPeng {
 
     /**
     * Select a lamp and set the RGB color. 
-    * @param R R color value of RGB color, eg: 0
-    * @param G G color value of RGB color, eg: 128
-    * @param B B color value of RGB color, eg: 255
+    * @param r R color value of RGB color, eg: 83
+    * @param g G color value of RGB color, eg: 202
+    * @param b B color value of RGB color, eg: 236
     */
     //% weight=40
     //% inlineInputMode=inline
@@ -349,7 +393,7 @@ namespace tianPeng {
     //% blockId=tianPeng_servo block="Set servo %servoList angle to %angle °"
     //% angle.shadow="protractorPicker"
     //% Servo.fieldEditor="gridpicker"
-    //% Servo.fieldOptions.columns=2
+    //% Servo.fieldOptions.columns=1
     export function setServo(Servo: servoList, angle: number = 180): void {
         let buf = pins.createBuffer(4);
         switch (Servo) {
