@@ -2,8 +2,8 @@
  * The intelligent programming car produced by ELECFREAKS Co.ltd looks like a pig
  */
 //% weight=0 color=#53caec icon="\uf1b9"
-//% block="TianPengC1" 
-namespace tianPengC1 {
+//% block="TianPeng" 
+namespace tianPeng {
     const tianPengAdd = 0X10
     let Buff = pins.createBuffer(4);
     let _initEvents = true
@@ -227,7 +227,7 @@ namespace tianPengC1 {
         }
     }
     /**
-    * TODO: Runs when line sensor finds or loses
+    * TODO: Runs when line sensor finds or loses.
     */
     //% weight=50
     //% block="On %sensor| line %event"
@@ -240,7 +240,7 @@ namespace tianPengC1 {
         console.logValue("event", event)
     }
     /**
-    * TODO: Cars can extend the ultrasonic function to prevent collisions and other functions..
+    * TODO: Cars can extend the ultrasonic function to prevent collisions and other functions.
     * @param Sonarunit two states of ultrasonic module, eg: SonarUnit.Centimeters
     */
     //% weight=40
@@ -295,10 +295,13 @@ namespace tianPengC1 {
             }
         }
     }
+    /**
+    * TODO: Select a color to Set eye mask lamp.
+    */
     //% block="LED show color $color"
     //% weight=20
     //% color.shadow="colorNumberPicker"
-    export function showColor(color: number) {
+    export function colorLight(color: number) {
         let r, g, b: number = 0
         r = color >> 16
         g = (color >> 8) & 0xFF
@@ -325,6 +328,15 @@ namespace tianPengC1 {
         Buff[3] = b;
         pins.i2cWriteBuffer(tianPengAdd, Buff);
     }
+    /**
+    * TODO: Turn off the eye mask lamp.
+    */
+    //% block="Turn off LED Light"
+    //% weight=9
+    export function closeLight():void {
+        rgbLight(0, 0, 0)
+    }
+
     /**
      * TODO: Set the angle of servo. 
      * @param Servo ServoList, eg: ServoList.S1
@@ -354,6 +366,26 @@ namespace tianPengC1 {
         Buff[1] = angle;
         Buff[2] = 0;
         Buff[3] = 0;
+        pins.i2cWriteBuffer(tianPengAdd, Buff);
+
+    }
+    /**
+     * TODO: Set the angle of servo. 
+     */
+    //% weight=4
+    //% block="Disable all servos"
+    export function disableServo():void{
+        let buf = pins.createBuffer(4);
+        Buff[1] = 0;
+        Buff[2] = 0;
+        Buff[3] = 0;
+        Buff[0] = 0x10;
+        pins.i2cWriteBuffer(tianPengAdd, Buff);
+        Buff[0] = 0x11;
+        pins.i2cWriteBuffer(tianPengAdd, Buff);
+        Buff[0] = 0x12;
+        pins.i2cWriteBuffer(tianPengAdd, Buff);
+        Buff[0] = 0x13;
         pins.i2cWriteBuffer(tianPengAdd, Buff);
 
     }
